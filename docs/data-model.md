@@ -361,7 +361,7 @@ CREATE TABLE refresh_tokens (
 CREATE TABLE subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  plan TEXT NOT NULL,                  -- 'free' / 'basic' / 'pro' / 'enterprise'
+  plan TEXT NOT NULL,                  -- 'free' / 'paid'
   status TEXT NOT NULL,                -- 'active' / 'past_due' / 'canceled'
   current_period_start TIMESTAMPTZ,
   current_period_end TIMESTAMPTZ,
@@ -433,17 +433,31 @@ CREATE TABLE tamper_reports (
   reported_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- AI 使用記録（Pro plan の月次クォータ）
-CREATE TABLE ai_usage_records (
+-- プロファイル作成代行 依頼（補助収益・[subscription.md](subscription.md) §13）
+CREATE TABLE profile_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id),
-  used_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  request_type TEXT NOT NULL,
-  tokens_consumed INT
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  target_url TEXT NOT NULL,
+  requested_fields JSONB NOT NULL,     -- [{label, description, sampleValue}, ...]
+  delivery_config JSONB,
+  screenshot_keys TEXT[],              -- Object Storage の key 配列
+  note TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',  -- pending / in_progress / ready_for_review / delivered / rejected
+  delivered_profile_payload JSONB,     -- 完成 profile（user の自作 profile として配布される内容）
+  reject_reason TEXT,
+  stripe_checkout_session_id TEXT,
+  paid_at TIMESTAMPTZ,
+  price_jpy INT NOT NULL DEFAULT 2000,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  delivered_at TIMESTAMPTZ
 );
 
-CREATE INDEX ON ai_usage_records (user_id, used_at);
+CREATE INDEX ON profile_requests (user_id, created_at);
+CREATE INDEX ON profile_requests (status, created_at);
 ```
+
+AI 使用記録テーブル（`ai_usage_records`）は仕様撤回により不要。クラウド同期テーブルも持たない。
 
 ### 5.2 インデックス方針
 - `users(email)` UNIQUE
@@ -452,7 +466,8 @@ CREATE INDEX ON ai_usage_records (user_id, used_at);
 - `subscriptions(user_id, status)` 複合
 - `official_profile_versions(profile_id, version)` UNIQUE
 - `audit_logs(user_id, created_at)` 複合
-- `ai_usage_records(user_id, used_at)` 月次集計用
+- `profile_requests(user_id, created_at)` 複合
+- `profile_requests(status, created_at)` 運営者の作業 queue 用
 
 ### 5.3 マイグレーション方針
 - 番号付き SQL ファイル（`000001_initial.up.sql` 等）
@@ -484,7 +499,7 @@ CREATE INDEX ON ai_usage_records (user_id, used_at);
 | run | runs | — |
 | profile version | official_profile_versions | official_profiles.current_version |
 | subscription | （後続）subscription_events | subscriptions |
-| AI usage | ai_usage_records | （月次集計を view で） |
+| profile 代行依頼 | profile_requests（status 変遷） | profile_requests.status |
 | device | devices.revoked_at | devices.last_seen_at |
 
 ---
