@@ -1,0 +1,1 @@
+function a(e,n){return e.enabled&&e.matchPatterns.some(t=>r(t,n))}function r(e,n){const t=e.replace(/[.+?^${}()|[\]\\]/g,"\\$&").replace(/\*/g,".*");return new RegExp(`^${t}$`).test(n)}function c(e,n){const t=new URL(e);return`${t.origin}${t.pathname.replace(/\/?$/,"")}*`}export{a,c as p};
