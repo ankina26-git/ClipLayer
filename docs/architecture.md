@@ -46,7 +46,6 @@
                 │   ユーザーの送信先（任意）         │
                 │  - Webhook (Slack / Discord 等)   │
                 │  - 自社 API                       │
-                │  - Google Sheets                  │
                 │  - CSV ローカル保存               │
                 └──────────────────────────────────┘
 ```
@@ -70,13 +69,15 @@
 
 | コンポーネント | 役割 | 技術候補 |
 |---|---|---|
-| Auth API | login / refresh / device 管理 | Hono / Next.js Route Handlers / Go |
-| Profile Registry | 公式 profile CRUD・署名・配信 | 同上 |
-| Subscription Service | Stripe webhook 受信・plan 状態同期 | 同上 |
-| AI Proxy | Anthropic API 経由の解析（Pro 機能） | 同上 |
-| DB | ユーザー・サブスク・profile・device | PostgreSQL |
-| Object Storage | profile 署名済 JSON（オプション） | S3 互換 |
+| Auth API | login / refresh / device 管理 | Hono |
+| Profile Registry | 公式 profile CRUD・署名・配信 | Hono |
+| Subscription Service | Stripe webhook 受信・plan 状態同期 | Hono |
+| Profile Request Service | 代行依頼受付・運営者管理画面（[subscription.md](subscription.md) §13）| Hono |
+| DB | ユーザー・サブスク・profile・device・依頼 | PostgreSQL |
+| Object Storage | profile 署名済 JSON・代行依頼スクリーンショット | S3 互換 |
 | 監視 / canary | 対象サイトの DOM 変化検知 | Playwright + cron |
+
+AI Proxy / Cloud Sync コンポーネントは MVP では持たない（仕様撤回）。
 
 ---
 
@@ -251,11 +252,11 @@ UI からは Repository 経由でしかストレージに触らない。
 
 | 拡張機能 | 既存設計との接点 |
 |---|---|
-| AI 解析 | `background/handlers/ai-analyze.ts` を追加・サーバの /ai/analyze を呼ぶ |
-| クラウド同期 | `background/handlers/sync.ts` を追加・items を差分 push |
+| 動的ページ巡回（list → detail）| Navigation Orchestrator + ProcessingView を追加（[dynamic-traversal.md](dynamic-traversal.md)）|
 | 複数送信先 | profile.deliveries[] を配列化・順次 deliver |
 | スケジュール実行 | chrome.alarms + run engine に schedule 引数 |
 | Firefox 対応 | Manifest V3 互換性が成熟したら検討 |
+| BYO API key 方式の AI 解析（将来）| ユーザー自身の Anthropic/OpenAI キーを設定・サーバ proxy 経由でなく拡張から直接呼ぶ |
 
 ---
 
