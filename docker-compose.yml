@@ -1,0 +1,37 @@
+services:
+  extension:
+    image: node:22-bookworm
+    working_dir: /workspace
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/workspace
+      - node_modules:/workspace/node_modules
+
+  api:
+    image: node:22-bookworm
+    working_dir: /workspace
+    command: sh -c "npm install && npm run api:dev"
+    environment:
+      PORT: 8787
+    ports:
+      - "8787:8787"
+    volumes:
+      - .:/workspace
+      - node_modules:/workspace/node_modules
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: cliplayer
+      POSTGRES_PASSWORD: cliplayer
+      POSTGRES_DB: cliplayer
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  node_modules:
+  postgres_data:

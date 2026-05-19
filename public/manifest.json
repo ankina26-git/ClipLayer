@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "ClipLayer",
+  "description": "GUI driven web scraping for logged-in business pages.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "114",
+  "action": {
+    "default_title": "ClipLayer",
+    "default_popup": "src/extension/ui/popup.html"
+  },
+  "side_panel": {
+    "default_path": "src/extension/ui/sidepanel.html"
+  },
+  "options_page": "src/extension/ui/options.html",
+  "background": {
+    "service_worker": "assets/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["assets/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["activeTab", "alarms", "sidePanel", "storage", "tabs", "scripting"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"]
+}
