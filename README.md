@@ -17,6 +17,14 @@ npm run build
 
 Load `dist/` as an unpacked extension in Chrome.
 
+Create a distributable ZIP:
+
+```bash
+npm run package:chrome
+```
+
+The ZIP is generated at `release/ClipLayer-0.1.0.zip`.
+
 Run the API skeleton:
 
 ```bash

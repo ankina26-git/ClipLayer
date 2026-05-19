@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "icons": "node scripts/generate-icons.mjs",
     "dev": "vite --host 0.0.0.0",
     "api:dev": "tsx apps/api/src/index.ts",
     "build": "tsc --noEmit && vite build",
+    "package:chrome": "npm run icons && npm run build && mkdir -p release && cd dist && python3 -m zipfile -c ../release/ClipLayer-0.1.0.zip .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview --host 0.0.0.0"
   },
