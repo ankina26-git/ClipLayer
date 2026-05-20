@@ -36,6 +36,6 @@
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["activeTab", "alarms", "sidePanel", "storage", "tabs", "scripting"],
+  "permissions": ["sidePanel", "storage", "tabs"],
   "optional_host_permissions": ["https://*/*", "http://*/*"]
 }

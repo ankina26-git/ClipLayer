@@ -47,3 +47,13 @@ curl http://localhost:8787/health
 - Dexie schema and repositories for profiles, runs, pages, items, logs, and delivery attempts
 - Hono API `/health` and profile catalog stub
 - Docker Compose for extension dev server, API, and PostgreSQL
+
+## Chrome Web Store
+
+Store listing copy and permission explanations are in [STORE_LISTING.md](STORE_LISTING.md).
+
+Privacy policy:
+
+```text
+https://github.com/ankina26-git/ClipLayer/blob/main/docs/privacy-policy.md
+```
