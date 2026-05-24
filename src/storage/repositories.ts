@@ -1,6 +1,17 @@
 import { nanoid } from "nanoid";
 import { db } from "./db";
-import type { ExtractResult, ItemRow, PageRow, ProfileRow, RunRow } from "../shared/types";
+import type {
+  ExtractResult,
+  ItemRow,
+  JobRow,
+  PageRow,
+  ProfileRow,
+  RunRow,
+  TaskRow,
+  TransferMappingSet,
+  WriteProfileRow,
+  WriteReceiptRow
+} from "../shared/types";
 
 export const profilesRepo = {
   list: () => db.profiles.orderBy("updatedAt").reverse().toArray(),
@@ -8,6 +19,44 @@ export const profilesRepo = {
   get: (id: string) => db.profiles.get(id),
   put: (profile: ProfileRow) => db.profiles.put(profile),
   delete: (id: string) => db.profiles.delete(id)
+};
+
+export const writeProfilesRepo = {
+  list: () => db.writeProfiles.orderBy("updatedAt").reverse().toArray(),
+  enabled: () => db.writeProfiles.where("enabled").equals(1).toArray(),
+  get: (id: string) => db.writeProfiles.get(id),
+  put: (profile: WriteProfileRow) => db.writeProfiles.put(profile),
+  delete: (id: string) => db.writeProfiles.delete(id)
+};
+
+export const jobsRepo = {
+  recent: (limit = 20) => db.jobs.orderBy("createdAt").reverse().limit(limit).toArray(),
+  get: (id: string) => db.jobs.get(id),
+  put: (job: JobRow) => db.jobs.put(job),
+  delete: (id: string) => db.jobs.delete(id)
+};
+
+export const tasksRepo = {
+  listByJob: (jobId: string) => db.tasks.where("jobId").equals(jobId).toArray(),
+  get: (id: string) => db.tasks.get(id),
+  put: (task: TaskRow) => db.tasks.put(task),
+  bulkPut: (tasks: TaskRow[]) => db.tasks.bulkPut(tasks),
+  delete: (id: string) => db.tasks.delete(id)
+};
+
+export const mappingsRepo = {
+  listByWriteProfile: (writeProfileId: string) => db.mappings.where("writeProfileId").equals(writeProfileId).toArray(),
+  get: (id: string) => db.mappings.get(id),
+  put: (mapping: TransferMappingSet) => db.mappings.put(mapping),
+  delete: (id: string) => db.mappings.delete(id)
+};
+
+export const writeReceiptsRepo = {
+  listByJob: (jobId: string) => db.writeReceipts.where("jobId").equals(jobId).toArray(),
+  findByIdempotencyKey: (writeProfileId: string, idempotencyKey: string) =>
+    db.writeReceipts.where("[writeProfileId+idempotencyKey]").equals([writeProfileId, idempotencyKey]).first(),
+  put: (receipt: WriteReceiptRow) => db.writeReceipts.put(receipt),
+  delete: (id: string) => db.writeReceipts.delete(id)
 };
 
 export const runsRepo = {

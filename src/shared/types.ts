@@ -4,6 +4,21 @@ export type SelectorType = "css" | "xpath";
 export type FieldType = "text" | "attr" | "html" | "image-url";
 export type RunStatus = "running" | "success" | "partial" | "failed";
 export type DeliveryType = "none" | "webhook" | "csv" | "cloud-sync" | "google-sheets";
+export type WriteInputType =
+  | "text"
+  | "textarea"
+  | "select"
+  | "checkbox"
+  | "radio"
+  | "contenteditable"
+  | "date"
+  | "file";
+export type SubmitMode = "auto" | "stop-before-submit" | "manual-each";
+export type TabStrategy = "active-tab" | "background-tab";
+export type TaskKind = "import" | "write";
+export type TaskStatus = "queued" | "running" | "success" | "partial" | "failed" | "skipped" | "canceled";
+export type JobKind = "batch-import" | "batch-write" | "transfer";
+export type SourceKind = "run" | "csv" | "manual";
 
 export interface TransformDef {
   trim?: boolean;
@@ -59,6 +74,121 @@ export interface ProfileRow {
   changelog?: string;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface WriteFieldDef {
+  name: string;
+  selector: string;
+  selectorType: SelectorType;
+  inputType: WriteInputType;
+  required: boolean;
+  optionMatch?: "by-value" | "by-label" | "by-index";
+  transform?: TransformDef;
+  constant?: string;
+  fileFromImageField?: string;
+}
+
+export interface SubmitProbe {
+  selector: string;
+  timeoutMs: number;
+}
+
+export interface SubmitDef {
+  mode: SubmitMode;
+  submitSelector?: string;
+  successProbe?: SubmitProbe;
+  errorProbe?: Pick<SubmitProbe, "selector">;
+}
+
+export interface RecordAdvanceDef {
+  type: "reload-url" | "click-new" | "stay";
+  urlTemplate?: string;
+  newButtonSelector?: string;
+  readinessProbe?: SubmitProbe;
+}
+
+export interface WriteProfileRow {
+  id: string;
+  name: string;
+  description?: string;
+  source: ProfileSource;
+  serverId?: string;
+  version: number;
+  signature?: string;
+  matchPatterns: string[];
+  formScopeSelector?: string;
+  fields: WriteFieldDef[];
+  submit: SubmitDef;
+  recordAdvance: RecordAdvanceDef;
+  tabStrategy: TabStrategy;
+  enabled: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface FieldMapping {
+  writeField: string;
+  sourceField?: string;
+  constant?: string;
+  transform?: TransformDef;
+  onMissing: "skip-record" | "empty" | "fail";
+}
+
+export interface TransferMappingSet {
+  id: string;
+  sourceProfileId?: string;
+  sourceKind: SourceKind;
+  writeProfileId: string;
+  mappings: FieldMapping[];
+  keyField: string;
+}
+
+export interface JobRow {
+  id: string;
+  name: string;
+  kind: JobKind;
+  status: TaskStatus;
+  createdAt: number;
+  startedAt: number | null;
+  finishedAt: number | null;
+  taskIds: string[];
+  mappingId?: string;
+  totalTasks: number;
+  doneTasks: number;
+  totalRecords: number;
+  writtenRecords: number;
+  triggeredBy: "manual" | "schedule";
+}
+
+export interface TaskRow {
+  id: string;
+  jobId: string;
+  kind: TaskKind;
+  status: TaskStatus;
+  profileId?: string;
+  writeProfileId?: string;
+  targetUrl?: string;
+  recordCount: number;
+  recordCursor: number;
+  attempt: number;
+  errorSummary?: string;
+  startedAt: number | null;
+  finishedAt: number | null;
+}
+
+export interface WriteReceiptRow {
+  id: string;
+  jobId: string;
+  taskId: string;
+  writeProfileId: string;
+  idempotencyKey: string;
+  recordIndex: number;
+  status: "success" | "failed" | "unverified" | "skipped";
+  targetUrl: string;
+  submittedValues: Record<string, string>;
+  errorMessage?: string;
+  attemptedAt: number;
+  finishedAt: number | null;
 }
 
 export interface RunRow {
@@ -177,4 +307,10 @@ export type RuntimeMessage =
   | { type: "EXTRACT"; profile: ProfileRow }
   | { type: "PREVIEW_PROFILE"; profile: ProfileRow }
   | { type: "PICKER_SAVED"; profile: ProfileRow }
+  | { type: "START_WRITE_PICKER"; writeProfileName: string }
+  | { type: "WRITE_PICKER_SAVED"; writeProfile: WriteProfileRow }
+  | { type: "WRITE_RECORD"; writeProfile: WriteProfileRow; values: Record<string, string>; dryRun: boolean }
+  | { type: "WRITE_RESULT"; status: "success" | "failed" | "unverified"; errorMessage?: string }
+  | { type: "RUN_JOB"; jobId: string }
+  | { type: "JOB_PROGRESS"; jobId: string; done: number; total: number; lastResult?: string }
   | { type: "TAB_STATE"; url: string; title?: string; matchingProfiles: ProfileRow[] };
