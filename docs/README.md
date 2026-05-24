@@ -31,6 +31,7 @@ ClipLayer は、Chrome 拡張機能として動作する **GUI 駆動の Web ス
 | [workflows.md](workflows.md) | 主要 GUI ワークフロー（公式 profile 利用 / 自作 / 自動更新 / list→detail） |
 | [element-picker.md](element-picker.md) | Element Picker（核心機能）の技術仕様 |
 | [dynamic-traversal.md](dynamic-traversal.md) | 動的ページ巡回（list → detail）・SSR/SPA 自動切替・ProcessingView |
+| [write-back.md](write-back.md) | 書き込み（別ページへの自動入力）・システム間転記・タスク化と一斉取り込み/一斉書き込み |
 | [data-model.md](data-model.md) | データ保存設計（IndexedDB / chrome.storage / サーバ DB） |
 | [subscription.md](subscription.md) | サブスクモデル（Free + ¥700 有料）・代行サービス・改ざん耐性 |
 | [backend-api.md](backend-api.md) | サーバ API 仕様 |
@@ -50,6 +51,7 @@ ClipLayer は、Chrome 拡張機能として動作する **GUI 駆動の Web ス
 6. **1 拡張 = 1 アカウント = 1 サブスク**: 明示的なチームプランを作らずとも企業導入で自然に収益スケール
 7. **AI / クラウド同期は MVP では持たない**: 継続コストを抑えて低価格を成立させる
 8. **動的ページ巡回は MVP+1**: list → detail の網羅取得は最重要差別化だが MVP では型のみ・実装は Phase 8
+9. **書き込みは抽出の対称機能**: 抽出データを別ページへ自動入力する転記を追加（[write-back.md](write-back.md)）。不可逆ゆえドライラン・1 件試行・冪等キーを必須化。一斉取り込み/一斉書き込みは Task/Job で束ねる。MVP では型のみ・実装は Phase 11 以降
 
 ---
 
