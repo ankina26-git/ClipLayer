@@ -164,6 +164,59 @@ MVP から正式リリースまでの段階的開発計画。総開発期間 **�
 
 ---
 
+## 書き込み（Write-Back）フェーズ
+
+別ページへの自動入力・システム間転記の段階導入。番号は [write-back.md](write-back.md) §18 と一致。**動的ページ巡回（Phase 8-10・[dynamic-traversal.md](dynamic-traversal.md)）の後**に着手する。書き込みは不可逆のため、各 Phase で安全ガード（ドライラン・1 件試行・冪等キー）を妥協しない。
+
+### Phase 11: 単発書き込み基盤（4 日）
+
+| # | 項目 | 日数 | 完了条件 |
+|---|---|---|---|
+| 11.1 | `WriteProfileRow` 等の型 + Dexie `version(2)` migration | 0.5 | writeProfiles ストア CRUD |
+| 11.2 | Write Picker（Stage W1-W4・入力欄クリック指定）| 1.5 | 5 欄の Write Profile を GUI で作成 |
+| 11.3 | content script writer（ネイティブ setter + event 発火）| 1.0 | React/Vue フォームに値が反映 |
+| 11.4 | active-tab + `stop-before-submit` で手動 1 フォーム | 1.0 | 1 件を埋めて人が送信できる |
+
+### Phase 12: マッピングと転記の 1 件（3 日）
+
+| # | 項目 | 日数 | 完了条件 |
+|---|---|---|---|
+| 12.1 | フィールドマッピング UI（source → 入力欄）| 1.0 | 抽出項目をドロップダウンで対応付け |
+| 12.2 | ドライラン（埋めるが送信しない）| 0.5 | プレビューで投入値を確認 |
+| 12.3 | 1 件試行 + successProbe / errorProbe 判定 | 1.0 | 転記の「1 件」が送信成功判定まで通る |
+| 12.4 | 送信前確認ダイアログ | 0.5 | 値一覧の承認後にのみ送信 |
+
+### Phase 13: 一斉書き込み（4 日）
+
+| # | 項目 | 日数 | 完了条件 |
+|---|---|---|---|
+| 13.1 | Job / Task モデル + queue（concurrency=1）| 1.0 | batch-write Task が N レコードを順次処理 |
+| 13.2 | 冪等キー + writeReceipts（二重登録防止）| 1.0 | 成功済みキーは skipped |
+| 13.3 | `recordCursor` 中断再開 | 0.5 | タブ閉じ後に未送信分から再開 |
+| 13.4 | ProcessingView 書き込み版 + キルスイッチ | 1.0 | 「N 件目を登録中」実況・中止で送信済み件数明示 |
+| 13.5 | `unverified` の非自動再送ハンドリング | 0.5 | 成否不明は保留・自動再送しない |
+
+### Phase 14: 一斉取り込み・転記パイプライン（3 日）
+
+| # | 項目 | 日数 | 完了条件 |
+|---|---|---|---|
+| 14.1 | batch-import Job（複数 profile 一斉実行）| 1.0 | 複数抽出をまとめて Run 生成 |
+| 14.2 | transfer Job（import → mapping → write 連結）| 1.5 | サイト A 抽出 → サイト B 自動登録が通し実行 |
+| 14.3 | background-tab での順次書き込み（finally で close）| 0.5 | タブ残留 0% |
+
+### Phase 15: 公式 Write Profile 配信（3 日）
+
+| # | 項目 | 日数 | 完了条件 |
+|---|---|---|---|
+| 15.1 | `official_write_profiles` + versions テーブル | 0.5 | サーバ DB schema 完成 |
+| 15.2 | Ed25519 署名 + GET 配信（plan フィルタ）| 1.0 | 有料 plan に公式 Write Profile が降る |
+| 15.3 | 署名検証 + 破損検知 → 即時 sync | 1.0 | 抽出側と同じ自動更新フロー |
+| 15.4 | 公式 Write Profile を 2 サイト分作成 | 0.5 | 実フォームで転記成功 |
+
+書き込み合計 **約 17 日**。スケジュール実行（Phase E）との統合・adaptive throttling は将来。
+
+---
+
 ## 採用順序の根拠
 
 1. **Phase 1-2 を優先**: 拡張だけで動く完結体験（Free 機能）を最初に固める。投資が無駄にならない
