@@ -56,11 +56,12 @@ async function getCurrentTabState() {
 async function runProfile(profileId: string): Promise<{ ok: boolean; result?: ExtractResult; error?: string }> {
   const [tab, profile] = await Promise.all([getActiveTab(), profilesRepo.get(profileId)]);
   if (!tab?.id || !tab.url) return { ok: false, error: "対象タブが見つかりません" };
+  if (!isScriptableUrl(tab.url)) return { ok: false, error: "このページでは拡張機能を実行できません。通常の Web ページで試してください。" };
   if (!profile) return { ok: false, error: "Profile が見つかりません" };
 
   const run = await runsRepo.start(profile.id, tab.url);
   try {
-    const result = (await chrome.tabs.sendMessage(tab.id, { type: "EXTRACT", profile })) as ExtractResult;
+    const result = (await sendToContentScript(tab.id, { type: "EXTRACT", profile })) as ExtractResult;
     await runsRepo.persistResult(run, profile, result);
     return { ok: true, result };
   } catch (error) {
@@ -71,14 +72,37 @@ async function runProfile(profileId: string): Promise<{ ok: boolean; result?: Ex
 
 async function startPicker(profileName: string): Promise<{ ok: boolean; error?: string }> {
   const tab = await getActiveTab();
-  if (!tab?.id) return { ok: false, error: "対象タブが見つかりません" };
+  if (!tab?.id || !tab.url) return { ok: false, error: "対象タブが見つかりません" };
+  if (!isScriptableUrl(tab.url)) return { ok: false, error: "このページではピックモードを実行できません。通常の Web ページで試してください。" };
   try {
-    await chrome.tabs.sendMessage(tab.id, { type: "START_PICKER", profileName });
+    await sendToContentScript(tab.id, { type: "START_PICKER", profileName });
     return { ok: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : "ピックモードを開始できませんでした";
     return { ok: false, error: message };
   }
+}
+
+async function sendToContentScript(tabId: number, message: RuntimeMessage): Promise<unknown> {
+  try {
+    return await chrome.tabs.sendMessage(tabId, message);
+  } catch (error) {
+    if (!isMissingReceiverError(error)) throw error;
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ["assets/content.js"]
+    });
+    return chrome.tabs.sendMessage(tabId, message);
+  }
+}
+
+function isMissingReceiverError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("Receiving end does not exist") || message.includes("Could not establish connection");
+}
+
+function isScriptableUrl(url: string): boolean {
+  return /^(https?:|file:)/.test(url);
 }
 
 async function getActiveTab(): Promise<chrome.tabs.Tab | undefined> {
